@@ -2,8 +2,6 @@ use crate::error::ErrorCode;
 use crate::state::Launchpad;
 use crate::{constants::*, state::Launcher};
 use anchor_lang::prelude::*;
-use anchor_lang::solana_program::program::invoke_signed;
-use anchor_lang::solana_program::system_instruction;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
@@ -18,7 +16,7 @@ pub struct Sell<'info> {
 
     #[account(
       mut, 
-      seeds = [LAUNCHER_SEED.as_bytes()], 
+      seeds = [LAUNCHER_SEED], 
       bump,
       constraint = launcher.fee_pool == protool_fee_pool.key() @ ErrorCode::InvalidFeePool
     )]
@@ -30,7 +28,7 @@ pub struct Sell<'info> {
 
     #[account(
         mut,
-        seeds = [LAUNCHPAD_SEED.as_bytes(), signer.key().as_ref()],
+        seeds = [LAUNCHPAD_SEED, signer.key().as_ref()],
         bump,
         constraint = launchpad.owner == signer.key() @ ErrorCode::InvalidLaunchpadOwner
     )]
@@ -38,16 +36,14 @@ pub struct Sell<'info> {
 
     #[account(
         mut ,
-        seeds = [LAUNCHPAD_PRESALE_SEED.as_bytes(), launchpad.key().as_ref()],
+        seeds = [LAUNCHPAD_PRESALE_SEED, launchpad.key().as_ref()],
         bump,
         token::mint = mint,
         token::authority = presale_token_account
     )]
     pub presale_token_account: Account<'info, TokenAccount>,
 
-    #[account(
-        mint::authority = signer
-    )]
+    #[account()]
     pub mint: Account<'info, Mint>,
 
     #[account(
@@ -60,7 +56,7 @@ pub struct Sell<'info> {
     /// CHECK: This is safe as it's pda
     #[account(
         mut,
-        seeds = [LAUNCHPAD_PRESALE_TREASURY_SEED.as_bytes(), launchpad.key().as_ref()],
+        seeds = [LAUNCHPAD_PRESALE_TREASURY_SEED, launchpad.key().as_ref()],
         bump
     )]
     pub presale_treasury: AccountInfo<'info>,
@@ -85,39 +81,10 @@ pub fn sell(ctx: Context<Sell>, args: SellArgs) -> Result<()> {
         args.amount,
     )?;
 
-    let launchpad_key = launchpad.key();
+    **ctx.accounts.presale_treasury.try_borrow_mut_lamports()? -= args.amount / 1_000_000_000 * PRESALE_PRICE;
+    **ctx.accounts.signer.try_borrow_mut_lamports()? += args.amount / 1_000_000_000 * PRESALE_PRICE * 99 / 100;
 
-    let seeds = &[LAUNCHPAD_PRESALE_TREASURY_SEED.as_bytes(), launchpad_key.as_ref()];
-
-    let transfer_instruction = system_instruction::transfer(
-      &ctx.accounts.presale_treasury.key(), 
-        ctx.accounts.signer.key, 
-        args.amount * PRESALE_PRICE * 99 / 100
-    );
-    invoke_signed(
-        &transfer_instruction,
-        &[
-            ctx.accounts.presale_treasury.to_account_info(),
-            ctx.accounts.signer.to_account_info(),
-            ctx.accounts.system_program.to_account_info(),
-        ],
-        &[seeds],
-    )?;
-
-    let transfer_instruction = system_instruction::transfer(
-      &ctx.accounts.presale_treasury.key(), 
-        ctx.accounts.protool_fee_pool.key, 
-        args.amount * PRESALE_PRICE / 100
-    );
-    invoke_signed(
-        &transfer_instruction,
-        &[
-            ctx.accounts.presale_treasury.to_account_info(),
-            ctx.accounts.protool_fee_pool.to_account_info(),
-            ctx.accounts.system_program.to_account_info(),
-        ],
-        &[seeds],
-    )?;
+    **ctx.accounts.protool_fee_pool.try_borrow_mut_lamports()? += args.amount / 1_000_000_000 * PRESALE_PRICE / 100;
 
     Ok(())
 }

@@ -23,25 +23,13 @@ pub struct InitializeLaunchpad<'info> {
         init,
         payer = signer,
         space = Launchpad::LEN + 8,
-        seeds = [LAUNCHPAD_SEED.as_bytes(), signer.key().as_ref()],
+        seeds = [LAUNCHPAD_SEED, signer.key().as_ref()],
         bump
     )]
     pub launchpad: Account<'info, Launchpad>,
 
-    #[account(
-        mint::authority = signer
-    )]
+    #[account()]
     pub mint: Account<'info, Mint>,
-
-    /// CHECK: We're initilizing it
-    #[account(
-        init,
-        payer = signer,
-        space = 0,
-        seeds = [LAUNCHPAD_PRESALE_TREASURY_SEED.as_bytes(), launchpad.key().as_ref()],
-        bump
-    )]
-    pub presale_treasury: AccountInfo<'info>,
 
     pub system_program: Program<'info, System>,
 }

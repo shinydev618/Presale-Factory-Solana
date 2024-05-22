@@ -39,4 +39,16 @@ pub mod presale_launcher {
     pub fn purchase(ctx: Context<Purchase>, args: PurchaseArgs) -> Result<()> {
         instructions::purchase(ctx, args)
     }
+
+    pub fn sell(ctx: Context<Sell>, args: SellArgs) -> Result<()> {
+        instructions::sell(ctx, args)
+    }
+
+    pub fn initialize_pool(ctx: Context<PoolInitialize>, nonce: u8, open_time: u64) -> Result<()> {
+        instructions::initialize_pool(ctx, nonce, open_time)
+    }
+
+    pub fn withdraw(ctx: Context<PoolWithdraw>, amount: u64) -> Result<()> {
+        instructions::withdraw(ctx, amount)
+    }
 }

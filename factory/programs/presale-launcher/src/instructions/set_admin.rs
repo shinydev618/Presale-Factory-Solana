@@ -9,7 +9,7 @@ pub struct SetAdminArgs {
 
 #[derive(Accounts)]
 pub struct SetAdmin<'info> {
-    #[account(mut, seeds = [LAUNCHER_SEED.as_bytes()], bump)]
+    #[account(mut, seeds = [LAUNCHER_SEED], bump)]
     pub launcher: Account<'info, Launcher>,
     pub authority: Signer<'info>,
 }

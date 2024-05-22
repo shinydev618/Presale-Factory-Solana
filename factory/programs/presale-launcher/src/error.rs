@@ -14,4 +14,8 @@ pub enum ErrorCode {
     LaunchpadNotInProgress,
     #[msg("Not Enough Balance For Presale")]
     NotEnoughBalance,
+    #[msg("Not Enough Sol For Pool Creation")]
+    NotEnoughSOL,
+    #[msg("Max 1 Sol Limit Exceeded")]
+    MaxBuyExceeded,
 }

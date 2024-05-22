@@ -17,7 +17,7 @@ pub struct Initialize<'info> {
         init,
         payer = signer,
         space = Launcher::LEN + 8,
-        seeds = [LAUNCHER_SEED.as_bytes()],
+        seeds = [LAUNCHER_SEED],
         bump
     )]
     pub launcher: Box<Account<'info, Launcher>>,

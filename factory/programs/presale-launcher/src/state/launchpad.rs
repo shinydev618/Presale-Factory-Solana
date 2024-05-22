@@ -42,4 +42,9 @@ impl Launchpad {
         self.presale_state = PresaleState::InProgress;
         Ok(())
     }
+
+    pub fn complete_presale(&mut self) -> Result<()> {
+        self.presale_state = PresaleState::Completed;
+        Ok(())
+    }
 }

@@ -105,6 +105,7 @@ describe('amm-proxy', () => {
       transaction,
       anchor.getProvider().connection
     )
+    console.log(anchor.getProvider().send)
     if (transaction.instructions.length > 0) {
       const txid = anchor.getProvider().send(transaction, null, {
         skipPreflight: true,
@@ -118,7 +119,74 @@ describe('amm-proxy', () => {
       owner.publicKey
     )
 
-    let tx = await program.methods
+    // let tx = await program.methods
+    //   .proxyInitialize(
+    //     nonce,
+    //     new anchor.BN(0),
+    //     new anchor.BN(1000000000), // set as you want
+    //     new anchor.BN(2000000000) // set as you want
+    //   )
+    //   .accounts({
+    //     ammProgram: globalInfo.ammProgram,
+    //     amm: ammId,
+    //     ammAuthority: ammAuthority,
+    //     ammOpenOrders: ammOpenOrders,
+    //     ammLpMint: lpMintAddress,
+    //     ammCoinMint: market.baseMintAddress,
+    //     ammPcMint: market.quoteMintAddress,
+    //     ammCoinVault: ammCoinVault,
+    //     ammPcVault: ammPcVault,
+    //     ammTargetOrders: ammTargetOrders,
+    //     ammConfig: amm_config,
+    //     createFeeDestination: globalInfo.ammCreateFeeDestination,
+    //     marketProgram: globalInfo.marketProgram,
+    //     market: marketId,
+    //     userWallet: owner.publicKey,
+    //     userTokenCoin: userCoinTokenAccount,
+    //     userTokenPc: userPcTokenAccount,
+    //     userTokenLp: userLPTokenAccount,
+    //     tokenProgram: TOKEN_PROGRAM_ID,
+    //     associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+    //     systemProgram: SystemProgram.programId,
+    //     sysvarRent: SYSVAR_RENT_PUBKEY,
+    //   })
+    //   .preInstructions([
+    //     ComputeBudgetProgram.setComputeUnitLimit({ units: 1400000 }),
+    //   ])
+    //   .rpc(confirmOptions)
+    // console.log('initialize tx: ', tx)
+
+    // /************************************ deposit test ***********************************************************************/
+
+    // tx = await program.methods
+    //   .proxyDeposit(
+    //     new anchor.BN(1000000000), // maxCoinAmount
+    //     new anchor.BN(3000000000), // maxPcAmount
+    //     new anchor.BN(0) // baseSide?
+    //   )
+    //   .accounts({
+    //     ammProgram: globalInfo.ammProgram,
+    //     amm: poolKeys.id,
+    //     ammAuthority: poolKeys.authority,
+    //     ammOpenOrders: poolKeys.openOrders,
+    //     ammTargetOrders: poolKeys.targetOrders,
+    //     ammLpMint: poolKeys.lpMint,
+    //     ammCoinVault: poolKeys.baseVault,
+    //     ammPcVault: poolKeys.quoteVault,
+    //     market: marketId,
+    //     marketEventQueue: market.eventQueue,
+    //     userTokenCoin: userCoinTokenAccount,
+    //     userTokenPc: userPcTokenAccount,
+    //     userTokenLp: userLPTokenAccount,
+    //     userOwner: owner.publicKey,
+    //     tokenProgram: TOKEN_PROGRAM_ID,
+    //   })
+    //   .rpc(confirmOptions)
+    // console.log('deposit tx: ', tx)
+
+    /************************************ withdraw test ***********************************************************************/
+
+    let initInstruction = await program.methods
       .proxyInitialize(
         nonce,
         new anchor.BN(0),
@@ -152,12 +220,11 @@ describe('amm-proxy', () => {
       .preInstructions([
         ComputeBudgetProgram.setComputeUnitLimit({ units: 1400000 }),
       ])
-      .rpc(confirmOptions)
-    console.log('initialize tx: ', tx)
+      .instruction()
 
     /************************************ deposit test ***********************************************************************/
 
-    tx = await program.methods
+    let depositInstruction = await program.methods
       .proxyDeposit(
         new anchor.BN(1000000000), // maxCoinAmount
         new anchor.BN(3000000000), // maxPcAmount
@@ -180,12 +247,22 @@ describe('amm-proxy', () => {
         userOwner: owner.publicKey,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
-      .rpc(confirmOptions)
-    console.log('deposit tx: ', tx)
+      .instruction()
 
-    /************************************ withdraw test ***********************************************************************/
+    const trx = new Transaction()
+    trx.add(initInstruction)
+    trx.add(depositInstruction)
 
-    tx = await program.methods
+    try {
+      let txId = await anchor
+        .getProvider()
+        .sendAndConfirm(trx, [owner], confirmOptions)
+      console.log('Transaction success, ID:', txId)
+    } catch (error) {
+      console.error('Transaction failed:', error)
+    }
+
+    let tx = await program.methods
       .proxyWithdraw(
         new anchor.BN(10) // lpAmount
       )

@@ -377,6 +377,47 @@ export async function createMintPair(
   return { tokenA, tokenB }
 }
 
+export async function createMintToken(
+  wallet: Signer,
+  provider: anchor.Provider
+) {
+  const connection = provider.connection
+  const mintAuthority = Keypair.generate()
+  const tokenA = await createMint(
+    connection,
+    wallet,
+    mintAuthority.publicKey,
+    null,
+    9
+  )
+
+  const ownerTokenAAccount = await getOrCreateAssociatedTokenAccount(
+    connection,
+    wallet,
+    tokenA,
+    wallet.publicKey,
+    false,
+    'processed',
+    undefined,
+    TOKEN_PROGRAM_ID
+  )
+
+  await mintTo(
+    connection,
+    wallet,
+    tokenA,
+    ownerTokenAAccount.address,
+    mintAuthority,
+    new anchor.BN('1000000000000000000'),
+    [],
+    { skipPreflight: false },
+    TOKEN_PROGRAM_ID
+  )
+
+  console.log('create tokenA: ', tokenA.toString())
+  return tokenA
+}
+
 export async function createMarket({
   connection,
   wallet,
